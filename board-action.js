@@ -2,6 +2,7 @@ const actions = [
   'Adopted as amended',
   'Adopted on first reading',
   'Adopted',
+  'Accepted',
   'Forwarded to BCC with a favorable recommendation with committee amendment(s)',
   'Forwarded to the BCC by the BCC Chairman with a favorable recommendation',
   'Forwarded to the BCC by the BCC Chairwoman with a favorable recommendation',
