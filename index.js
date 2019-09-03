@@ -2,6 +2,7 @@ const axios = require('axios')
 const cheerio = require('cheerio')
 const fs = require('fs')
 const officeHolders = require('./office-holders')
+const { getSplitAction } = require('./board-action')
 
 const START_DATE = '02-01-2015'
 const END_DATE = '03-18-2015'
@@ -41,22 +42,21 @@ const c$get = (a, b, c, d) => {
   return selectNode.text()
 }
 
-const getResolutions = combinedRecords => (() => {
-  const r = {}
-  combinedRecords.forEach(a => {
-    var id = Number(c$get(a, 0, 0, 'td'))
-    var name = String(c$get(a, 0, 1, 'td'))
-    var type = String(c$get(a, 0, 2, 'td'))
-    var description = String(c$get(a, 1, 1, 'td'))
-    var resolutionFull = String(c$get(a, 2, 1, 'td'))
-    var date = resolutionFull.match(/([0-9]){1,2}\/([0-9]){1,2}\/([0-9]){4}/g)[0]
-    var resolution = resolutionFull.split(date)[1]
-    r[id] = {
-      id, name, type, description, date, resolution
-    }
-  })
-  return r
-})()
+const getResolutions = (combinedRecords, vote = true) => combinedRecords.map(a => {
+  const id = Number(c$get(a, 0, 0, 'td'))
+  const name = String(c$get(a, 0, 1, 'td'))
+  const type = String(c$get(a, 0, 2, 'td'))
+  const description = String(c$get(a, 1, 1, 'td'))
+  const resolutionFull = String(c$get(a, 2, 1, 'td'))
+  const date = resolutionFull.match(/([0-9]){1,2}\/([0-9]){1,2}\/([0-9]){4}/g)[0]
+  const resolutionVerbose = getSplitAction(resolutionFull.split(date)[1])
+  const action = resolutionVerbose[1]
+  const committee = resolutionVerbose[0]
+  const voting = String(c$get(a, 2, 2, 'td')).split('VOTED:')[1]
+  return {
+    id, name, type, description, date, committee, action, voting
+  }
+})
 
 const getVotingRecord = async officeHolder => {
   const url = genURL(officeHolder)
