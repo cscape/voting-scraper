@@ -5,7 +5,7 @@ const officeHolders = require('./office-holders')
 const { getSplitAction } = require('./board-action')
 const crypto = require('crypto')
 
-const START_DATE = '06-18-1996'
+const START_DATE = '06-18-2019'
 const END_DATE = '09-01-2019'
 
 const genURL = officeHolder => `https://www.miamidade.gov/govaction/Votingrecord.asp?` +
@@ -83,24 +83,30 @@ const get$ = htmlData => {
   return cheerio.load(htmlData)
 }
 
-const selectedOfficeHolder = 57
+const loopy = async () => {
+  for (let a in officeHolders) {
+    await getVotingRecord(a)
+      .then(get$)
+      .then(getCombinedRecords)
+      .then(getResolutions)
+      .then(data => {
+        // _id, id, name, type, description, date, control, status, voting
+        const origHeaders = ['_id', 'id', 'name', 'type', 'description', 'date', 'control', 'status', 'voting']
+        const headers = [
+          '_id', 'File Number', 'File Name', 'File Type', 'Title', 'Date', 'Control', 'Status', 'Voted'
+        ].map(a => `"${a}"`).join(',')
+        const sanitizedName = officeHolders[a].replace(/[^A-Za-z0-9]/gm, '')
+        const ws = fs.createWriteStream(`${sanitizedName}.csv`)
+        console.log(`Writing for ${officeHolders[a]}`)
+        ws.write(headers + '\n')
+        for (let i = 0; i < data.length; i += 1) {
+          let line = []
+          origHeaders.forEach(h => line.push(`"${data[i][h]}"`))
+          ws.write(line.join(',') + '\n')
+        }
+        ws.end()
+      })
+  }
+}
 
-getVotingRecord(selectedOfficeHolder)
-  .then(get$)
-  .then(getCombinedRecords)
-  .then(getResolutions)
-  .then(data => {
-    // _id, id, name, type, description, date, control, status, voting
-    const origHeaders = ['_id', 'id', 'name', 'type', 'description', 'date', 'control', 'status', 'voting']
-    const headers = [
-      '_id', 'File Number', 'File Name', 'File Type', 'Title', 'Date', 'Control', 'Status', 'Voted'
-    ].map(a => `"${a}"`).join(',')
-    const ws = fs.createWriteStream(`${officeHolders[selectedOfficeHolder]}.csv`)
-    ws.write(headers + '\n')
-    for (let i = 0; i < data.length; i += 1) {
-      let line = []
-      origHeaders.forEach(h => line.push(`"${data[i][h]}"`))
-      ws.write(line.join(',') + '\n')
-    }
-    ws.end()
-  })
+loopy().then(process.exit)
