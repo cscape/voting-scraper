@@ -3,6 +3,7 @@ const cheerio = require('cheerio')
 const fs = require('fs')
 const officeHolders = require('./office-holders')
 const { getSplitAction } = require('./board-action')
+const crypto = require('crypto')
 
 const START_DATE = '02-01-2015'
 const END_DATE = '03-18-2015'
@@ -42,19 +43,22 @@ const c$get = (a, b, c, d) => {
   return selectNode.text()
 }
 
+const cleanInv = str => str.replace(/�/gi, '\'')
+
 const getResolutions = (combinedRecords, vote = true) => combinedRecords.map(a => {
   const id = Number(c$get(a, 0, 0, 'td'))
-  const name = String(c$get(a, 0, 1, 'td'))
+  const name = cleanInv(String(c$get(a, 0, 1, 'td')))
   const type = String(c$get(a, 0, 2, 'td'))
-  const description = String(c$get(a, 1, 1, 'td'))
-  const resolutionFull = String(c$get(a, 2, 1, 'td'))
+  const description = cleanInv(String(c$get(a, 1, 1, 'td')))
+  const resolutionFull = cleanInv(String(c$get(a, 2, 1, 'td')))
   const date = resolutionFull.match(/([0-9]){1,2}\/([0-9]){1,2}\/([0-9]){4}/g)[0]
   const resolutionVerbose = getSplitAction(resolutionFull.split(date)[1])
-  const action = resolutionVerbose[1]
-  const committee = resolutionVerbose[0]
+  const status = resolutionVerbose[1]
+  const control = resolutionVerbose[0]
   const voting = String(c$get(a, 2, 2, 'td')).split('VOTED:')[1]
+  const _id = crypto.createHash('md5').update(id + date + status).digest('hex')
   return {
-    id, name, type, description, date, committee, action, voting
+    _id, id, name, type, description, date, control, status, voting
   }
 })
 
@@ -79,10 +83,24 @@ const get$ = htmlData => {
   return cheerio.load(htmlData)
 }
 
-getVotingRecord(663)
+const selectedOfficeHolder = 663
+
+getVotingRecord(selectedOfficeHolder)
   .then(get$)
   .then(getCombinedRecords)
   .then(getResolutions)
   .then(data => {
-    console.log(data)
+    // _id, id, name, type, description, date, control, status, voting
+    const origHeaders = ['_id', 'id', 'name', 'type', 'description', 'date', 'control', 'status', 'voting']
+    const headers = [
+      '_id', 'File Number', 'File Name', 'File Type', 'Title', 'Date', 'Control', 'Status', 'Voted'
+    ].map(a => `"${a}"`).join(',')
+    const ws = fs.createWriteStream(`${officeHolders[selectedOfficeHolder]}.csv`)
+    ws.write(headers + '\n')
+    for (let i = 0; i < data.length; i += 1) {
+      let line = []
+      origHeaders.forEach(h => line.push(`"${data[i][h]}"`))
+      ws.write(line.join(',') + '\n')
+    }
+    ws.end()
   })
