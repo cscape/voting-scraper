@@ -5,8 +5,8 @@ const officeHolders = require('./office-holders')
 const { getSplitAction } = require('./board-action')
 const crypto = require('crypto')
 
-const START_DATE = '02-01-2015'
-const END_DATE = '03-18-2015'
+const START_DATE = '06-18-1996'
+const END_DATE = '09-01-2019'
 
 const genURL = officeHolder => `https://www.miamidade.gov/govaction/Votingrecord.asp?` +
   `begdate=${START_DATE}&` +
@@ -43,7 +43,7 @@ const c$get = (a, b, c, d) => {
   return selectNode.text()
 }
 
-const cleanInv = str => str.replace(/�/gi, '\'')
+const cleanInv = str => str.replace(/�/gi, '\'').replace(/\n/gm, '')
 
 const getResolutions = (combinedRecords, vote = true) => combinedRecords.map(a => {
   const id = Number(c$get(a, 0, 0, 'td'))
@@ -83,7 +83,7 @@ const get$ = htmlData => {
   return cheerio.load(htmlData)
 }
 
-const selectedOfficeHolder = 663
+const selectedOfficeHolder = 57
 
 getVotingRecord(selectedOfficeHolder)
   .then(get$)
