@@ -96,7 +96,7 @@ const loopy = async () => {
           '_id', 'File Number', 'File Name', 'File Type', 'Title', 'Date', 'Control', 'Status', 'Voted'
         ].map(a => `"${a}"`).join(',')
         const sanitizedName = officeHolders[a].replace(/[^A-Za-z0-9]/gm, '')
-        const ws = fs.createWriteStream(`${sanitizedName}.csv`)
+        const ws = fs.createWriteStream(`csv/${sanitizedName}.csv`)
         console.log(`Writing for ${officeHolders[a]}`)
         ws.write(headers + '\n')
         for (let i = 0; i < data.length; i += 1) {
