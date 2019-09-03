@@ -64,7 +64,7 @@ const getResolutions = (combinedRecords, vote = true) => combinedRecords.map(a =
 
 const getVotingRecord = async officeHolder => {
   const url = genURL(officeHolder)
-  console.log(url)
+  console.log(`Fetching for ${officeHolders[officeHolder]} via ${url}`)
   let hdata
   try {
     const { data } = await axios.get(url, {
@@ -76,6 +76,7 @@ const getVotingRecord = async officeHolder => {
   } catch (err) {
     throw err
   }
+  console.log(`Finished fetching records for ${officeHolders[officeHolder]}`)
   return hdata
 }
 
@@ -95,7 +96,7 @@ const loopy = async () => {
         const headers = [
           '_id', 'File Number', 'File Name', 'File Type', 'Title', 'Date', 'Control', 'Status', 'Voted'
         ].map(a => `"${a}"`).join(',')
-        const sanitizedName = officeHolders[a].replace(/[^A-Za-z0-9]/gm, '')
+        const sanitizedName = officeHolders[a].replace(/[^A-Za-z0-9\s]/gm, '')
         const ws = fs.createWriteStream(`csv/${sanitizedName}.csv`)
         console.log(`Writing for ${officeHolders[a]}`)
         ws.write(headers + '\n')
@@ -104,7 +105,7 @@ const loopy = async () => {
           let line = []
           origHeaders.forEach(h => line.push(`"${data[i][h]}"`))
           ws.write(line.join(',') + '\n')
-          console.log(`${(i / tot * 100).toFixed(2)}%\t${officeHolders[a]}`)
+          console.log(`${((i + 1) / tot * 100).toFixed(2)}%\t${officeHolders[a]}`)
         }
         ws.end()
       })
