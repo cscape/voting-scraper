@@ -5,8 +5,8 @@ const officeHolders = require('./office-holders')
 const { getSplitAction } = require('./board-action')
 const crypto = require('crypto')
 
-const START_DATE = '06-18-2019'
-const END_DATE = '09-01-2019'
+const START_DATE = '06-18-1996'
+const END_DATE = '09-02-2019'
 
 const genURL = officeHolder => `https://www.miamidade.gov/govaction/Votingrecord.asp?` +
   `begdate=${START_DATE}&` +
@@ -99,10 +99,12 @@ const loopy = async () => {
         const ws = fs.createWriteStream(`csv/${sanitizedName}.csv`)
         console.log(`Writing for ${officeHolders[a]}`)
         ws.write(headers + '\n')
-        for (let i = 0; i < data.length; i += 1) {
+        const tot = data.length
+        for (let i = 0; i < tot; i += 1) {
           let line = []
           origHeaders.forEach(h => line.push(`"${data[i][h]}"`))
           ws.write(line.join(',') + '\n')
+          console.log(`${(i / tot * 100).toFixed(2)}%\t${officeHolders[a]}`)
         }
         ws.end()
       })
